@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+    production:
+        container_name: production
+        image: production
+        build:
+            context: .
+            target: production
+            dockerfile: ./Dockerfile
+        # command: /bin/sh -c "./sh/production.sh"
+        depends_on:
+            - db
+    msuser:
+        container_name: ms-user
+        image: ms-user
+        build:
+            context: .
+            target: msuser
+            dockerfile: ./Dockerfile
+        command: /bin/sh -c "./sh/msuser.sh"
+        ports:
+            - 8000:8000
+            - 9228:9229
+        networks:
+            - server-net
+        depends_on:
+            - production
+    msapp:
+        container_name: ms-app
+        image: ms-app
+        build:
+            context: .
+            target: msapp
+            dockerfile: ./Dockerfile
+        # command: /bin/sh -c "./sh/msapp.sh"
+        ports:
+            - 3000:3000
+            - 9229:9229
+        networks:
+            - server-net
+        depends_on:
+            - msuser
+        links:
+          - msuser:msuser
+    db:
+        container_name: postgres_db
+        image: postgres
+        restart: always
+        ports:
+            - 5432:5432
+        environment:
+            POSTGRES_USER: monkey_user
+            POSTGRES_PASSWORD: monkey_pass
+            POSTGRES_DB: monkey_user_db
+        networks:
+            - server-net
+networks:
+    server-net:
+        driver: bridge
